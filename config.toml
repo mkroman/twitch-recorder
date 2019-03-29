@@ -1,4 +1,5 @@
 [twitch]
+check_interval = 30
 
 # These hooks are run right before a stream starts recording.
 [[hooks.pre]]
@@ -14,3 +15,4 @@ quality = "best"
 singsing = {}
 adam13531 = {}
 pajlada = {}
+xqcow = {}

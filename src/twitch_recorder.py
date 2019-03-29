@@ -1,17 +1,75 @@
-import logger
+import os
+import time
+import logging
+
 import toml
+import requests
+
 
 class TwitchRecorder:
-    def __init__(self, config):
+    DEFAULT_CHECK_INTERVAL = 30
+
+    # Constructs a new TwitchRecorder instance.
+    def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.streaming_processes = []
+
+    # Loads the TOML file at the given +path+ and uses it as a config file.
+    def load_config(self, path):
+        config = toml.load(path)
+
         self.config = config
+        self.twitch_api_key = config['twitch'].get(
+                'key', os.environ.get('TWITCH_API_KEY'))
+        self.check_interval = config['twitch'].get(
+                'check_interval', self.DEFAULT_CHECK_INTERVAL)
 
     def run(self):
+        self.logger.debug('running')
 
+        while True:
+            self.poll()
+
+            self.logger.debug('Checking again in {}s'.format(self.check_interval))
+            time.sleep(self.check_interval)
+
+    def get_streams(self, streamer_names):
+        params = {'user_login': streamer_names, 'first': 100}
+
+        res = self.get('/helix/streams', params=params)
+        json = res.json()
+        streams = json.get('data', [])
+
+        if streams:
+            return streams
+
+    def get(self, path, **kwargs):
+        headers = {'Client-ID': self.twitch_api_key}
+
+        if 'headers' in kwargs:
+            kwargs['headers'] = {**headers, **kwargs['headers']}
+        else:
+            kwargs['headers'] = headers
+
+        res = requests.get('https://api.twitch.tv{}'.format(path), **kwargs)
+
+        return res
+
+    # Polls the streamer statuses from the Twitch API.
+    def poll(self):
+        streamers = self.config['streamers']
+        result = self.get_streams(streamers.keys())
+
+        for stream in result:
+            username = stream['user_name'].lower()
+            options = streamers[username]
+
+            self.logger.debug("{} is live - options: {}".format(username, options))
 
 
 if __name__ == '__main__':
-    config = toml.load('config.toml')
+    logging.basicConfig(level=logging.DEBUG)
 
     recorder = TwitchRecorder()
+    recorder.load_config('config.toml')
+    recorder.run()
