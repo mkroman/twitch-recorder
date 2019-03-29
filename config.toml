@@ -1,0 +1,16 @@
+[twitch]
+
+# These hooks are run right before a stream starts recording.
+[[hooks.pre]]
+
+# These hooks are run when a stream finishes recording.
+[[hooks.post]]
+
+[streamlink]
+output = "videos/{user}/{datetime} - {title}.mp4"
+quality = "best"
+
+[streamers]
+singsing = {}
+adam13531 = {}
+pajlada = {}
