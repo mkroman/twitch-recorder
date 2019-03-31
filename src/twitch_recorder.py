@@ -5,13 +5,15 @@ import logging
 import toml
 import requests
 
+from twitch_client import TwitchClient
+
 
 class TwitchRecorder:
     DEFAULT_CHECK_INTERVAL = 30
 
     # Constructs a new TwitchRecorder instance.
     def __init__(self):
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.streaming_processes = []
 
     # Loads the TOML file at the given +path+ and uses it as a config file.
@@ -21,6 +23,7 @@ class TwitchRecorder:
         self.config = config
         self.twitch_api_key = config['twitch'].get(
                 'key', os.environ.get('TWITCH_API_KEY'))
+        self.twitch_client = TwitchClient(self.twitch_api_key)
         self.check_interval = config['twitch'].get(
                 'check_interval', self.DEFAULT_CHECK_INTERVAL)
 
@@ -36,24 +39,10 @@ class TwitchRecorder:
     def get_streams(self, streamer_names):
         params = {'user_login': streamer_names, 'first': 100}
 
-        res = self.get('/helix/streams', params=params)
-        json = res.json()
-        streams = json.get('data', [])
+        res = self.twitch_client.get_streams(params)
+        streams = res.get('data', [])
 
-        if streams:
-            return streams
-
-    def get(self, path, **kwargs):
-        headers = {'Client-ID': self.twitch_api_key}
-
-        if 'headers' in kwargs:
-            kwargs['headers'] = {**headers, **kwargs['headers']}
-        else:
-            kwargs['headers'] = headers
-
-        res = requests.get('https://api.twitch.tv{}'.format(path), **kwargs)
-
-        return res
+        return streams
 
     # Polls the streamer statuses from the Twitch API.
     def poll(self):
