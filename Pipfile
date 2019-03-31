@@ -4,6 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+pdoc3 = ">=0.5.3"
 
 [packages]
 toml = ">=0.10"
