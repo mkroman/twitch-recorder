@@ -9,14 +9,20 @@ from twitch_client import TwitchClient
 
 
 class TwitchRecorder:
+    """TwitchRecorder is the main application class that continually checks
+    whether streamers are active and then starts recording."""
+
     DEFAULT_CHECK_INTERVAL = 30
 
-    # Constructs a new TwitchRecorder instance.
     def __init__(self):
+        """Constructs a new TwitchRecorder instance."""
+
         self.logger = logging.getLogger(self.__class__.__name__)
 
     # Loads the TOML file at the given +path+ and uses it as a config file.
     def load_config(self, path):
+        """Loads the TOML file at the given +path+ and uses it as a config."""
+
         config = toml.load(path)
 
         self.config = config
@@ -28,6 +34,9 @@ class TwitchRecorder:
         self.twitch_client = TwitchClient(twitch_api_key)
 
     def run(self):
+        """Continually poll the Twitch API for a change in streamer states and
+        start/stop recording accordingly."""
+
         streamers = self.config['streamers']
         self.logger.debug('{} streamers loaded: {}'.format(
             len(streamers),
@@ -43,6 +52,12 @@ class TwitchRecorder:
 
     # Polls the streamer statuses from the Twitch API.
     def poll(self):
+        """Polls current stream information for all requested streamers.
+
+        This method will automatically start recording a stream when the
+        streamer goes online.
+        """
+
         streamers = self.config['streamers']
         res = self.twitch_client.get_streams({'user_login': streamers.keys(),
                                               'first': 100})
